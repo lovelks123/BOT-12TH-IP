@@ -1,0 +1,182 @@
+/* ===========================
+   Clean Pink + White Theme (Light only)
+   Works with your existing HTML/JS classes
+   =========================== */
+
+:root{
+  /* Palette */
+  --pink-50:  #fff7fb;   /* page bg (very light pink) */
+  --pink-100: #ffe9f3;   /* soft surfaces */
+  --pink-200: #ffd6e7;   /* borders / mists */
+  --pink-400: #ff8fb8;   /* light accent */
+  --pink-500: #ff6aa6;   /* main accent (lighter) */
+  --pink-600: #ff4da0;   /* main accent */
+  --pink-700: #d62a7a;   /* deep accent (hover/active) */
+
+  --bg:        var(--pink-50);
+  --card:      #ffffff;
+  --text:      #22131d;  /* rich plum */
+  --muted:     #7b5c71;  /* muted plum */
+  --border:    var(--pink-200);
+  --primary:   var(--pink-600);
+  --primary2:  var(--pink-700);
+  --soft:      var(--pink-100);
+  --ring:      rgba(255, 77, 160, .35);
+  --shadow:    0 8px 28px rgba(214,42,122,.12);
+}
+
+/* Base */
+*{ box-sizing:border-box; }
+body{
+  margin:0;
+  font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color:var(--text);
+  background:var(--bg);
+}
+
+/* App bar */
+.appbar{
+  position:sticky; top:0; z-index:10;
+  padding:12px 16px; text-align:center; font-weight:700; letter-spacing:.2px;
+  color:#fff;
+  background: linear-gradient(90deg, var(--primary), var(--primary2));
+  border-bottom:1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* Layout */
+.container{ max-width:900px; margin:16px auto; padding:0 14px; }
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  box-shadow: var(--shadow);
+  padding:12px;
+  margin:10px 0;
+}
+
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media (max-width:700px){ .grid{ grid-template-columns:1fr; } }
+.row{ display:flex; gap:8px; }
+@media (max-width:700px){ .row{ flex-direction:column; } }
+
+/* Text helpers */
+.field{ display:flex; flex-direction:column; gap:6px; margin:6px 0; }
+.label{ color:var(--muted); font-size:.92rem; }
+.muted{ color:var(--muted); margin:6px 2px; }
+
+/* Inputs & selects (white with pink accents) */
+.input{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  outline:none;
+  background:#fff;
+  color:var(--text);
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  appearance:none; /* nicer select arrow on mobile */
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--primary) 50%),
+    linear-gradient(135deg, var(--primary) 50%, transparent 50%),
+    linear-gradient(to right, #fff, #fff); /* arrow bg */
+  background-position:
+    calc(100% - 20px) calc(1em + 2px),
+    calc(100% - 15px) calc(1em + 2px),
+    100% 0;
+  background-size: 5px 5px, 5px 5px, 2.5em 2.5em;
+  background-repeat: no-repeat;
+}
+.input:hover{
+  background: var(--soft);
+}
+.input:focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* Buttons (two looks: solid pink by default, optional outline if you add .btn-outline) */
+.btn{
+  white-space:nowrap;
+  padding:10px 14px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  color:#fff;
+  background: linear-gradient(180deg, var(--pink-500), var(--primary));
+  box-shadow: 0 6px 18px rgba(214,42,122,.22);
+  transition: transform .06s ease, filter .15s ease, box-shadow .15s ease;
+}
+.btn:hover{
+  filter: brightness(1.04);
+  box-shadow: 0 10px 26px rgba(214,42,122,.30);
+}
+.btn:active{ transform: translateY(1px); }
+.btn:focus-visible{ outline: 3px solid var(--ring); outline-offset:2px; }
+
+/* Optional outline style (use by adding class="btn btn-outline") */
+.btn-outline{
+  background:#fff; color:var(--primary);
+  border:1px solid var(--primary);
+  box-shadow:none;
+}
+.btn-outline:hover{
+  background: var(--soft);
+  box-shadow: 0 2px 12px rgba(214,42,122,.12);
+}
+
+/* Question list */
+.list{
+  max-height:360px; overflow:auto;
+  border:1px dashed var(--border);
+  border-radius:12px;
+  padding:6px;
+  background:#fff;
+  background-image: linear-gradient(0deg, var(--soft), transparent 60%);
+}
+.list > div{
+  padding:12px; margin:6px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+  transition: transform .08s ease, box-shadow .12s ease, border-color .12s ease;
+  cursor:pointer;
+}
+.list > div:hover{
+  transform: translateY(-1px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+}
+
+/* Answer panel */
+.hidden{ display:none; }
+.badge{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:20px;
+  background: var(--soft);
+  color: var(--primary2);
+  font-size:.85rem;
+  margin-bottom:6px;
+}
+.answer{
+  white-space:pre-wrap;
+  font-size:1.04rem;
+  line-height:1.55;
+}
+
+/* Nice focus for keyboard users */
+:focus-visible{
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Soft pink scrollbar (WebKit) */
+.list::-webkit-scrollbar{ width:10px; height:10px; }
+.list::-webkit-scrollbar-thumb{
+  background: #ffc4dd;
+  border-radius: 10px;
+  border: 2px solid #fff;
+}
+.list::-webkit-scrollbar-track{ background: #fff0f6; border-radius:10px; }
