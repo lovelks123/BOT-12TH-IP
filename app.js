@@ -1,8 +1,9 @@
 // ------------ CONFIG ------------
-const EXEC_URL = "https://script.google.com/macros/s/AKfycbxJrBmPChrrsT2QhNlH7QAYZu_flZ1qWs0pvnvg8ZGP7RKOJu35SyMaJkue7JkODG36yw/exec";
+const EXEC_URL =
+  "https://script.google.com/macros/s/AKfycbxJrBmPChrrsT2QhNlH7QAYZu_flZ1qWs0pvnvg8ZGP7RKOJu35SyMaJkue7JkODG36yw/exec";
 // --------------------------------
 
-// JSONP loader with extra Edge-friendly tweaks (unchanged)
+// JSONP loader
 function jsonp(url, cbName, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
     let done = false;
@@ -10,14 +11,13 @@ function jsonp(url, cbName, timeoutMs = 15000) {
     const timer = setTimeout(() => {
       if (done) return;
       cleanup();
-      reject(new Error("JSONP timeout: " + url));
+      reject(new Error("JSONP timeout"));
     }, timeoutMs);
 
     function cleanup() {
       clearTimeout(timer);
-      try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
-      const s = document.getElementById(cbName);
-      if (s) s.remove();
+      try { delete window[cbName]; } catch { window[cbName] = undefined; }
+      document.getElementById(cbName)?.remove();
     }
 
     window[cbName] = (data) => {
@@ -29,27 +29,21 @@ function jsonp(url, cbName, timeoutMs = 15000) {
 
     const s = document.createElement("script");
     s.id = cbName;
-    const glue = url.includes("?") ? "&" : "?";
-    s.src = url + glue + "callback=" + encodeURIComponent(cbName) + "&_t=" + Date.now();
-
-    // Edge/privacy tweaks
-    s.referrerPolicy = "no-referrer";
-    s.crossOrigin = "anonymous";
-    s.type = "text/javascript";
-
+    s.src = `${url}${url.includes("?") ? "&" : "?"}callback=${cbName}&_t=${Date.now()}`;
     s.onerror = () => {
       if (done) return;
       done = true;
       cleanup();
-      reject(new Error("JSONP network error: " + url));
+      reject(new Error("JSONP load error"));
     };
 
     document.body.appendChild(s);
   });
 }
-const cb = (p) => p + "_" + Math.random().toString(36).slice(2, 9);
 
-// ---- helpers / DOM refs ----
+const cb = p => `${p}_${Math.random().toString(36).slice(2, 9)}`;
+
+// ---- DOM refs (safe) ----
 const unitSel    = document.getElementById('unitSelect');
 const chapterSel = document.getElementById('chapterSelect');
 const listBox    = document.getElementById('questionList');
@@ -60,182 +54,108 @@ const confEl     = document.getElementById('confidence');
 const ansEl      = document.getElementById('answerText');
 const msgEl      = document.getElementById('message');
 
-function showError(msg){
+function showError(msg) {
   console.error(msg);
-  msgEl.innerHTML = '<span class="error">❌ '+msg+'</span>';
+  msgEl.textContent = msg;
 }
-function setMessage(t){ msgEl.textContent = t || ""; }
-function clearSelect(sel, placeholder){
-  sel.innerHTML = "";
-  const o = document.createElement('option');
-  o.value = ""; o.disabled = true; o.selected = true; o.textContent = placeholder;
-  sel.appendChild(o);
-}
-function enable(el, on){
+function setMessage(t="") { msgEl.textContent = t; }
+function enable(el, on) {
   el.disabled = !on;
-  el.classList.toggle('disabled', !on);
+  el.classList.toggle("disabled", !on);
+}
+function clearSelect(sel, placeholder) {
+  sel.innerHTML = `<option disabled selected>${placeholder}</option>`;
 }
 
-// ---------------- UI flows (dependent) ----------------
-async function loadUnits(){
-  try{
-    setMessage("Loading units…");
+// ---------------- LOADERS ----------------
+async function loadUnits() {
+  try {
+    setMessage("Loading units...");
     clearSelect(unitSel, "— Choose a unit —");
     clearSelect(chapterSel, "— Choose a unit first —");
     enable(chapterSel, false);
     enable(askBtn, false);
-    listBox.innerHTML = "<div class='muted'>Pick a unit and chapter to see questions.</div>";
-    resultCard.style.display = 'none';
+    resultCard.style.display = "none";
 
-    const url = EXEC_URL + "?action=units";
-    const res = await jsonp(url, cb("u"));
-    console.log("[units]", res);
-
-    const units = (res && Array.isArray(res.units)) ? res.units : [];
-    if (!units.length){ setMessage("No units found."); return; }
-
-    units.forEach(u => {
-      const o = document.createElement('option'); o.value = u; o.textContent = u;
+    const res = await jsonp(`${EXEC_URL}?action=units`, cb("u"));
+    (res.units || []).forEach(u => {
+      const o = document.createElement("option");
+      o.value = o.textContent = u;
       unitSel.appendChild(o);
     });
-
     setMessage("");
-  } catch (err){ showError(err.message); }
+  } catch (e) { showError(e.message); }
 }
 
-async function loadChapters(unit){
-  try{
-    setMessage("Loading chapters…");
+async function loadChapters(unit) {
+  try {
+    setMessage("Loading chapters...");
     clearSelect(chapterSel, "— Choose a chapter —");
     enable(chapterSel, true);
     enable(askBtn, false);
-    listBox.innerHTML = "<div class='muted'>Pick a chapter to see questions.</div>";
-    resultCard.style.display = 'none';
 
-    const url = EXEC_URL + "?action=chapters&unit=" + encodeURIComponent(unit || "");
-    const res = await jsonp(url, cb("c"));
-    console.log("[chapters]", res);
+    const res = await jsonp(
+      `${EXEC_URL}?action=chapters&unit=${encodeURIComponent(unit)}`,
+      cb("c")
+    );
 
-    const chapters = (res && Array.isArray(res.chapters)) ? res.chapters : [];
-    if (!chapters.length){ setMessage("No chapters for this unit."); return; }
-
-    chapters.forEach(c => {
-      const o = document.createElement('option'); o.value = c; o.textContent = c;
+    (res.chapters || []).forEach(c => {
+      const o = document.createElement("option");
+      o.value = o.textContent = c;
       chapterSel.appendChild(o);
     });
-
     setMessage("");
-  } catch (err){ showError(err.message); }
+  } catch (e) { showError(e.message); }
 }
 
-async function loadQuestions(unit, chapter){
-  try{
-    setMessage("Loading questions…");
-    listBox.innerHTML = "Loading…";
-    resultCard.style.display = 'none';
-    enable(askBtn, true);
+async function loadQuestions(unit, chapter) {
+  try {
+    setMessage("Loading questions...");
+    listBox.innerHTML = "";
 
-    const url = EXEC_URL + "?action=questions&unit=" + encodeURIComponent(unit || "")
-                         + "&chapter=" + encodeURIComponent(chapter || "");
-    const res = await jsonp(url, cb("q"));
-    console.log("[questions]", res);
+    const res = await jsonp(
+      `${EXEC_URL}?action=questions&unit=${encodeURIComponent(unit)}&chapter=${encodeURIComponent(chapter)}`,
+      cb("q")
+    );
 
-    const box = listBox; box.innerHTML="";
-    const qs = (res && Array.isArray(res.questions)) ? res.questions : [];
-    if(!qs.length){
-      box.innerHTML="<div class='muted'>No questions in this chapter yet.</div>";
-      enable(askBtn, false);
-      setMessage("");
-      return;
-    }
-    qs.forEach(q => {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'qwrap';
+    (res.questions || []).forEach(q => {
+      const w = document.createElement("div");
+      const qu = document.createElement("div");
+      const an = document.createElement("div");
 
-  const ques = document.createElement('div');
-  ques.className = 'qitem';
-  ques.textContent = q.question;
+      qu.textContent = q.question;
+      qu.className = "qitem";
+      an.textContent = q.answer || "(No answer)";
+      an.className = "qanswer hidden";
 
-  const ans = document.createElement('div');
-  ans.className = 'qanswer hidden';
-  ans.textContent = q.answer || "(No answer available)";
+      qu.onclick = () => an.classList.toggle("hidden");
 
-  ques.onclick = () => {
-    // Close all other answers
-    document.querySelectorAll('.qanswer').forEach(a => {
-      if (a !== ans) a.classList.add('hidden');
+      w.append(qu, an);
+      listBox.appendChild(w);
     });
-
-    // Toggle selected answer
-    ans.classList.toggle('hidden');
-  };
-
-  wrapper.appendChild(ques);
-  wrapper.appendChild(ans);
-  listBox.appendChild(wrapper);
-});
-
     setMessage("");
-  } catch (err){ showError(err.message); }
+  } catch (e) { showError(e.message); }
 }
 
-async function ask(){
-  try{
-    const unit = unitSel.value;
-    const chapter = chapterSel.value;
-    const q = (askInput.value || "").trim();
-
-    if (!unit){ showError("Please choose a unit first."); return; }
-    if (!chapter){ showError("Please choose a chapter."); return; }
-    if (!q){ showError("Type your question, or tap one from the list."); return; }
-
-    setMessage("Searching…");
-    resultCard.style.display = 'none';
-
-    const url = EXEC_URL
-      + "?action=ask&unit=" + encodeURIComponent(unit)
-      + "&chapter=" + encodeURIComponent(chapter)
-      + "&question=" + encodeURIComponent(q)
-      + "&minScore=35";
-
-    const res = await jsonp(url, cb("a"));
-    console.log("[ask]", res);
-
+async function ask() {
+  try {
+    if (!askInput.value.trim()) return showError("Type a question.");
+    setMessage("Searching...");
+    const res = await jsonp(
+      `${EXEC_URL}?action=ask&unit=${unitSel.value}&chapter=${chapterSel.value}&question=${encodeURIComponent(askInput.value)}`,
+      cb("a")
+    );
+    resultCard.style.display = "block";
+    confEl.textContent = `Confidence: ${res.score || 0}%`;
+    ansEl.textContent = res.answer || "No answer.";
     setMessage("");
-    resultCard.style.display = 'block';
-
-    if(!res || res.error){
-      confEl.textContent = "Error";
-      ansEl.textContent = (res && res.error) ? res.error : "No response.";
-      return;
-    }
-    if(!res.matched_question){
-      confEl.textContent = "No close match (score " + (res.score||0) + "%)";
-      ansEl.textContent = "Try rephrasing or choose from the list.";
-      return;
-    }
-    confEl.textContent = "Confidence: " + res.score + "% (matched: " + res.matched_question + ")";
-    ansEl.textContent = res.answer || "(No answer)";
-  } catch (err){
-    showError(err.message);
-  }
+  } catch (e) { showError(e.message); }
 }
 
-// ---- wire events ----
-unitSel.addEventListener('change', e => {
-  const unit = e.target.value;
-  if (!unit) return;
-  loadChapters(unit);
-});
-chapterSel.addEventListener('change', e => {
-  const unit = unitSel.value;
-  const chapter = e.target.value;
-  if (!unit || !chapter) return;
-  loadQuestions(unit, chapter);
-});
-document.getElementById('askBtn').addEventListener('click', ask);
+// ---- events ----
+unitSel.onchange = e => loadChapters(e.target.value);
+chapterSel.onchange = () => loadQuestions(unitSel.value, chapterSel.value);
+askBtn.onclick = ask;
 
 // ---- boot ----
-console.log("[init] JSONP frontend (Edge-tuned)");
-console.log("[init] student UI (unit→chapter→questions)");
 loadUnits();
