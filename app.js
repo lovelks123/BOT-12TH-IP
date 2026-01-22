@@ -148,15 +148,33 @@ async function loadQuestions(unit, chapter){
       setMessage("");
       return;
     }
-    qs.forEach(q=>{
-      const d=document.createElement('div'); d.className='qitem'; d.textContent=q.question;
-      d.onclick = ()=>{
-        resultCard.style.display = 'block';
-        confEl.textContent = "Answer to: " + q.question;
-        ansEl.textContent = q.answer || "(No answer)";
-      };
-      box.appendChild(d);
+    qs.forEach(q => {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'qwrap';
+
+  const ques = document.createElement('div');
+  ques.className = 'qitem';
+  ques.textContent = q.question;
+
+  const ans = document.createElement('div');
+  ans.className = 'qanswer hidden';
+  ans.textContent = q.answer || "(No answer available)";
+
+  ques.onclick = () => {
+    // Close all other answers
+    document.querySelectorAll('.qanswer').forEach(a => {
+      if (a !== ans) a.classList.add('hidden');
     });
+
+    // Toggle selected answer
+    ans.classList.toggle('hidden');
+  };
+
+  wrapper.appendChild(ques);
+  wrapper.appendChild(ans);
+  listBox.appendChild(wrapper);
+});
+
     setMessage("");
   } catch (err){ showError(err.message); }
 }
@@ -220,5 +238,4 @@ document.getElementById('askBtn').addEventListener('click', ask);
 // ---- boot ----
 console.log("[init] JSONP frontend (Edge-tuned)");
 console.log("[init] student UI (unit→chapter→questions)");
-
 loadUnits();
